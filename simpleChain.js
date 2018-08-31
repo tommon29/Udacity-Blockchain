@@ -12,7 +12,7 @@ let db = level(chainDB);
 |  ===============================================*/
 
 class Block{
-	constructor(data){
+    constructor(data){
      this.hash = "",
      this.height = 0,
      this.body = data,
@@ -34,11 +34,8 @@ class Blockchain{
 
   // asynchronosly initialize 
   async initialize(){
-    
     let blockheight = await this.getBlockHeightAsync();
-    //console.log("blockheight is: " + blockheight);
     this.height = blockheight;
-
     // if no height, then create genesis block
     if(blockheight == 0){
         this.addBlock(new Block("First block in the chain - Genesis block"));
@@ -68,19 +65,16 @@ class Blockchain{
   // Get block height
     async getBlockHeight(){
         let ret = await getBlockchainHeightAsync();
-        //console.log('getBlockHeight() returns: ' + ret);
         return ret;
     }
 
     async getBlockHeightAsync(){
         let ret = await getBlockchainHeightAsync();
-        //console.log('ret is: ' + ret);
         return ret;
     }
 
     setBlockchainHeight(value){
         this.height = value;
-        //console.log('Setting blockchain height to ' + value);
         return value;
     }
 
@@ -179,8 +173,12 @@ class Blockchain{
   function getLevelDBData(key){
     return new Promise(resolve => {
       db.get(key, function(err, value) {
-        if (err) return console.log('Not found!', err);
-        //console.log("value is : " + value);
+        //if (err) return console.log('Not found!', err);
+	if (err)
+	{
+	  console.log('Not found!', err);
+	  resolve(-1);
+	}
         resolve(value);
       })
     });
@@ -215,3 +213,8 @@ class Blockchain{
     });
     });
   }
+
+module.exports.getLevel = getLevelDBData;
+module.exports.Block = Block;
+module.exports.bc = Blockchain;
+module.exports.getHeight = getBlockchainHeightAsync;
