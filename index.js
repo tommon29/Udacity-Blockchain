@@ -2,6 +2,7 @@ const express = require('express')
 const app = express()
 
 var sc = require('./simpleChain.js')
+var resp = require('./Response.js')
 
 // taken from StackOverflow answer (https://stackoverflow.com/questions/5710358/how-to-retrieve-post-query-parameters)
 var bodyParser = require('body-parser')
@@ -78,6 +79,21 @@ app.post('/block', async function (req, res) {
   //res.send('body content of POST request is: ' + req.body.body + '\n');
   res.send(getJustAddedBlock);
   //res.send('Got a POST request in block \n')
+})
+
+app.post('/requestValidation', async function (req, res) {
+  let lAddress = req.body.address;
+  let lTimeStamp = new Date().getTime().toString().slice(0, -3);
+  let lMessage = lAddress + ':' + lTimeStamp + ':starRegistry'
+  let lValWindow = 300;
+  
+  // need to check if this address already has a request in the levelDB
+  // if so, need to check validationWindow and update and/or cleanup old reqs, and add a new one.
+
+  let lResponse = new resp.Response(lAddress, lTimeStamp, lMessage, lValWindow);
+  let ret = JSON.stringify(lResponse)
+
+  res.send(ret);
 })
 
 app.listen(8000, () => console.log('Example app listening on port 8000!'));
