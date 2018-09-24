@@ -99,3 +99,7 @@ The above blocks (from the GET endpoint section) were added to the chain with th
 
 Returns a list of all the keys in the levelDB. Good for debugging.
 http://localhost:8000/printDB
+
+### GET cleanOldRequests
+
+Cleans out the leveldb by finding any requestValidations that are older than five minutes old and removes them from the leveldb.

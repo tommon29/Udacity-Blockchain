@@ -224,8 +224,31 @@ function getBlockchainHeightAsync() {
   });
 }
 
+// check to see if a temporary entry is still valid. remove if not
+async function checkEntry(key) {
+  let lEntry = await getLevelDBData(key);
+  let lTimeStamp = new Date().getTime().toString().slice(0, -3);
+  lEntry = JSON.parse(lEntry);
+
+  let lTimeRemaining = lEntry.validationWindow - (lTimeStamp - lEntry.requestTimeStamp);
+
+  if (lTimeRemaining < 0) {
+    console.log("Need to delete this key: " + key);
+    db.del(key, function (err) {
+      if (err) {
+        // handle I/O or other error
+        console.log("There was an error removing key: " + key + " from the leveldb.");
+        console.log("The error was: " + err);
+      }
+    });
+  }
+}
+
 module.exports.getLevel = getLevelDBData;
 module.exports.Block = Block;
 module.exports.bc = Blockchain;
 module.exports.getHeight = getBlockchainHeightAsync;
 module.exports.db = db;
+module.exports.addTempLevel = addLevelDBData;
+module.exports.checkEntry = checkEntry;
+
