@@ -42,6 +42,26 @@ app.get('/block/:blockID', async function (req, res) {
 
 })
 
+app.get('/printDB', async function (req, res) {
+  try {
+    console.log('\nPrinting all of the data in the levelDB ...\n');
+    
+    var stream = sc.db.createReadStream();
+    var ret = "START <p>";
+    stream.on('data', function (data) {
+      console.log('key = ' + data.key + " , value = " + data.value);
+      ret += 'key = ' + data.key + " , value = " + data.value + '<p>';
+    }).on('close', function () {
+      ret += '<p> DONE';
+      console.log('\nDONE Printing all of the data in the levelDB\n');
+      res.send(ret);
+    });
+
+  } catch (e) {
+    res.send('ERROR e is: ' + e + '\n')
+  }
+})
+
 app.post('/', function (req, res) {
   res.send('Got a POST request')
 })
@@ -59,7 +79,5 @@ app.post('/block', async function (req, res) {
   res.send(getJustAddedBlock);
   //res.send('Got a POST request in block \n')
 })
-
-//app.get('/steve', (req, res) => res.send('Hello World2!'));
 
 app.listen(8000, () => console.log('Example app listening on port 8000!'));
