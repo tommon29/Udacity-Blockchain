@@ -10,7 +10,7 @@ class Response {
         var str = "\n";
         str += "address = " + this.address + '\n';
         str += "requestTimeStamp = " + this.requestTimeStamp + '\n';
-        str += "messa4ge = " + this.message + '\n';
+        str += "message = " + this.message + '\n';
         str += "validationWindow = " + this.validationWindow + '\n';
 
         return str;
