@@ -19,6 +19,17 @@ class Block {
       this.time = 0,
       this.previousBlockHash = ""
   }
+
+  toString() {
+    var str = "\n";
+    str += "hash = " + this.hash + '\n';
+    str += "height = " + this.height + '\n';
+    str += "body = " + this.body + '\n';
+    str += "time = " + this.time + '\n';
+    str += "previousBlockHash = " + this.previousBlockHash + '\n';
+
+    return str;
+  }
 }
 
 /* ===== Blockchain Class ==========================
