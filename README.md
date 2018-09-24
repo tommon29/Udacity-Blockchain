@@ -2,8 +2,24 @@
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. This project was built using the express framework and has two endpoints which are described below.
+These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. This project was built using the express framework and has two endpoints which are described below. Use the quickstart section for an already "set up" workspace.
 
+## Quickstart (just run these)
+
+```
+npm init
+npm install crypto-js --save
+npm install level --save
+npm install express --save
+npm install body-parser --save
+
+node index.js
+
+curl -X "POST" "http://localhost:8000/block" -H 'Content-Type: application/json' -d $'{"body":"adding a new block"}'
+curl -X "POST" "http://localhost:8000/block" -H 'Content-Type: application/json' -d $'{"body":"adding another new block"}'
+```
+
+## More Details
 ### Prerequisites
 
 Installing Node and NPM is pretty straightforward using the installer package available from the (Node.js® web site)[https://nodejs.org/en/].
@@ -23,8 +39,14 @@ npm install crypto-js --save
 npm install level --save
 ```
 
-- Install express using the instructions found [here](http://expressjs.com/en/starter/installing.html)
-
+- Install express (more instructions found [here](http://expressjs.com/en/starter/installing.html))
+```
+npm install express --save
+```
+- Install body-parser
+```
+npm install body-parser --save
+```
 
 ## Testing
 
@@ -72,3 +94,8 @@ The above blocks (from the GET endpoint section) were added to the chain with th
 
 - curl -X "POST" "http://localhost:8000/block" -H 'Content-Type: application/json' -d $'{"body":"adding a new block"}'
 - curl -X "POST" "http://localhost:8000/block" -H 'Content-Type: application/json' -d $'{"body":"adding another new block"}'
+
+### GET printDB
+
+Returns a list of all the keys in the levelDB. Good for debugging.
+http://localhost:8000/printDB
