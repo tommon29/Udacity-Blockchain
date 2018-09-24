@@ -217,3 +217,4 @@ module.exports.getLevel = getLevelDBData;
 module.exports.Block = Block;
 module.exports.bc = Blockchain;
 module.exports.getHeight = getBlockchainHeightAsync;
+module.exports.db = db;
