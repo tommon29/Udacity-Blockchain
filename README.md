@@ -12,6 +12,8 @@ npm install crypto-js --save
 npm install level --save
 npm install express --save
 npm install body-parser --save
+npm install bitcoinjs-lib --save
+npm install bitcoinjs-message --save
 
 node index.js
 
@@ -46,6 +48,12 @@ npm install express --save
 - Install body-parser
 ```
 npm install body-parser --save
+```
+
+- Install bitcoin libraries
+```
+npm install bitcoinjs-lib --save
+npm install bitcoinjs-message --save
 ```
 
 ## Testing

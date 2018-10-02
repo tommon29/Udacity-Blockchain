@@ -1,6 +1,10 @@
 const express = require('express')
 const app = express()
 
+// bitcoin libs
+const bitcoin = require('bitcoinjs-lib')
+const bitcoinMessage = require('bitcoinjs-message')
+
 var sc = require('./simpleChain.js')
 var resp = require('./Response.js')
 
@@ -135,6 +139,39 @@ app.post('/requestValidation', async function (req, res) {
 
   // add a temporary entry to the leveldb
   sc.addTempLevel(TMP + lAddress, ret);
+
+  res.send(ret);
+})
+
+app.post('/message-signature/validate', async function (req, res) {
+  // Verify a Bitcoin message
+  const address = req.body.address
+  const signature = req.body.signature
+  let ret = "FAILED";
+
+  let lCheck = await sc.getLevel(TMP + address);
+  if (lCheck != -1) {
+    lCheck = JSON.parse(lCheck);
+
+    console.log("lCheck.address is : " + lCheck.address);
+    console.log("lCheck.requestTimeStamp is : " + lCheck.requestTimeStamp);
+    console.log("lCheck.message is : " + lCheck.message);
+    console.log("lCheck.validationWindow is : " + lCheck.validationWindow);
+
+    let message = lCheck.message;
+    
+    if (bitcoinMessage.verify(message, address, signature)) {
+      console.log("Checks out");
+
+      // not the most elegant method of JSONifying something...
+      ret = "{\"registerStar\": true,\"status\": {\"address\": \"" + lCheck.address + "\",\"requestTimeStamp\": \"" + lCheck.requestTimeStamp + "\",\"message\": \"" + lCheck.message + "\",\"validationWindow\": " + lCheck.validationWindow + ",\"messageSignature\": \"valid\"}}";
+      console.log("ret is: " + ret);
+    }
+    else {
+      console.log("Didn't check out");
+      ret = "FAILED"; // for good measure ;)
+    }
+  }
 
   res.send(ret);
 })
