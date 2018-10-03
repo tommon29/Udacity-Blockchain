@@ -7,6 +7,11 @@ let level = require('level');
 let chainDB = './chaindata';
 let db = level(chainDB);
 
+let star = require('./Star.js')
+
+let TMP = "temp_"; // prefix for temporary keys in the leveldb
+let TMP2 = "temp2_"; // prefix for temporary keys in the leveldb that have had their address validated
+
 /* ===== Block Class ==============================
 |  Class with a constructor for block 			   |
 |  ===============================================*/
@@ -47,18 +52,25 @@ class Blockchain {
 
   // asynchronosly initialize 
   async initialize() {
-    let blockheight = await this.getBlockHeightAsync();
+    let blockheight = await this.getBlock(0);
     this.height = blockheight;
     // if no height, then create genesis block
-    if (blockheight == 0) {
-      this.addBlock(new Block("First block in the chain - Genesis block"));
+    if (blockheight == -1) {
+
+      let newStar = await star.createGenesisStar();
+      //console.log("address is: " + req.body.address);
+      console.log("newStar is: " + newStar.toString());
+      let newBlock = await new Block("1234567890123456789012345678901234", newStar);
+      console.log("newBlock is: " + newBlock.toString());
+
+      let ret = await this.addBlock(0, newBlock);
     }
   }
 
   // Add new block
-  async addBlock(newBlock) {
+  async addBlock(height, newBlock) {
     // Block height
-    newBlock.height = this.height;
+    newBlock.height = height;
     // UTC timestamp
     newBlock.time = new Date().getTime().toString().slice(0, -3);
     // previous block hash
@@ -70,9 +82,9 @@ class Blockchain {
     // Block hash with SHA256 using newBlock and converting to a string
     newBlock.hash = SHA256(JSON.stringify(newBlock)).toString();
     // Adding block object to chain
-    let add = await addDataToLevelDB(JSON.stringify(newBlock));
-    let ht = await getBlockchainHeightAsync();
-    this.height = ht;
+    let add = await addLevelDBData(height, JSON.stringify(newBlock));
+    //let ht = await getBlockchainHeightAsync();
+    this.height++;
   }
 
   // Get block height
@@ -217,7 +229,12 @@ function getBlockchainHeightAsync() {
   return new Promise(resolve => {
     let i = 0;
     db.createReadStream().on('data', function (data) {
-      i++;
+      var str = data.key;
+      var temp1 = str.includes(TMP);
+      var temp2 = str.includes(TMP2);
+      if (!temp1 && !temp2) {
+        i++; // only want to count keys that are "non-temp" keys
+      }
     }).on('error', function (err) {
       return console.log('Unable to read data stream!', err)
     }).on('close', function () {

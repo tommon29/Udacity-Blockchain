@@ -52,6 +52,42 @@ app.get('/block/:blockID', async function (req, res) {
 
 })
 
+app.get('/stars/address::addr', async function (req, res) {
+
+  var stream = sc.db.createReadStream();
+  var ret = "[";
+
+  stream.on('data', function (data) {
+    var lBlock = JSON.parse(data.value);
+    var lBody = lBlock.body;
+    var lAddress = lBody.address;
+
+    if (lAddress == req.params.addr) {
+      ret += data.value + ',';
+    }
+
+  }).on('close', function () {
+    ret = ret.substring(0, ret.length - 1);
+    ret += ']';
+    res.send(ret);
+  });
+
+})
+
+app.get('/stars/hash::hash', async function (req, res) {
+
+  var stream = sc.db.createReadStream();
+
+  stream.on('data', function (data) {
+    var lBlock = JSON.parse(data.value);
+    var lHash = lBlock.hash;
+
+    if (lHash == req.params.hash) {
+      res.send(data.value)
+    }
+  });
+})
+
 app.get('/printDB', async function (req, res) {
   try {
     //console.log('\nPrinting all of the data in the levelDB ...\n');
@@ -118,12 +154,14 @@ app.post('/block', async function (req, res) {
     //console.log("newBlock is: " + newBlock.toString());
 
     let tempBlockchain = await new sc.bc();
-    tempBlockchain.height = await sc.getHeight();
+    let ht = await sc.getHeight();
+    tempBlockchain.height = ht
     
-    let ret = await tempBlockchain.addBlock(newBlock);
+    let ret = await tempBlockchain.addBlock(tempBlockchain.height, newBlock);
     //console.log('ret is: ' + ret);
-    console.log('about to getLevel(' + tempBlockchain.height + ')');
-    var getJustAddedBlock = await sc.getLevel(tempBlockchain.height);
+    ht--;
+    console.log('about to getLevel(' + ht + ')');
+    var getJustAddedBlock = await sc.getLevel(ht);
     //console.log("getJustAddedBlock is: " + getJustAddedBlock);
     res.send(getJustAddedBlock);
      

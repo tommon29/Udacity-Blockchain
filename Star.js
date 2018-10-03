@@ -28,6 +28,32 @@ class Star {
 
 }
 
+async function createGenesisStar() {
+    // required star parameters
+    let ra = "12h 37m 40s";
+    let dec = "-04° 03''' 29";
+    let story = "Sol aka our Sun is the first star in our blockchain";
+    let storyEncoded = new Buffer(story).toString('hex');
+
+    // optional star parameters
+    let mag = "1AU";
+    let constellation = "Earth maybe";
+
+    let lStar = new Star(ra, dec, mag, constellation, storyEncoded, story);
+
+    if (!lStar.magnitude) {
+        delete lStar.magnitude;
+    }
+
+    if (!lStar.constellation) {
+        delete lStar.constellation;
+    }
+    
+    //console.log("star is: " + lStar.toString());
+
+    return lStar;
+}
+
 async function createStar(aStarData) {
     
     // required star parameters
@@ -91,4 +117,5 @@ async function checkStarData(aStarData) {
 
 module.exports.Star = Star;
 module.exports.createStar = createStar;
+module.exports.createGenesisStar = createGenesisStar;
 module.exports.checkStarData = checkStarData;
