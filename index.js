@@ -7,9 +7,11 @@ const bitcoinMessage = require('bitcoinjs-message')
 
 var sc = require('./simpleChain.js')
 var resp = require('./Response.js')
+var star = require('./Star.js')
 
 let DEFAULT_VALIDATION_WINDOW = 300;
 let TMP = "temp_"; // prefix for temporary keys in the leveldb
+let TMP2 = "temp2_"; // prefix for temporary keys in the leveldb that have had their address validated
 
 // taken from StackOverflow answer (https://stackoverflow.com/questions/5710358/how-to-retrieve-post-query-parameters)
 var bodyParser = require('body-parser')
@@ -52,16 +54,16 @@ app.get('/block/:blockID', async function (req, res) {
 
 app.get('/printDB', async function (req, res) {
   try {
-    console.log('\nPrinting all of the data in the levelDB ...\n');
+    //console.log('\nPrinting all of the data in the levelDB ...\n');
     
     var stream = sc.db.createReadStream();
     var ret = "START <p>";
     stream.on('data', function (data) {
-      console.log('key = ' + data.key + " , value = " + data.value);
+      //console.log('key = ' + data.key + " , value = " + data.value);
       ret += 'key = ' + data.key + " , value = " + data.value + '<p>';
     }).on('close', function () {
       ret += '<p> DONE';
-      console.log('\nDONE Printing all of the data in the levelDB\n');
+      //console.log('\nDONE Printing all of the data in the levelDB\n');
       res.send(ret);
     });
 
@@ -96,17 +98,41 @@ app.post('/', function (req, res) {
 })
 
 app.post('/block', async function (req, res) {
-  //console.log('req.body.body is : ' + req.body.body + '\n');
-  let newBlock = await new sc.Block(req.body.body);
-  let tempBlockchain = await new sc.bc();
-  tempBlockchain.height = await sc.getHeight();
-  //console.log('so far height is: ' + tempBlockchain.height);
-  let ret = await tempBlockchain.addBlock(newBlock);
-  //console.log('ret is: ' + ret);
-  var getJustAddedBlock = await sc.getLevel(tempBlockchain.height);
-  //res.send('body content of POST request is: ' + req.body.body + '\n');
-  res.send(getJustAddedBlock);
-  //res.send('Got a POST request in block \n')
+ 
+  let checkStar = star.checkStarData(req.body.star);
+  let address = req.body.address;
+
+  // need to check if they have validated their address aka star validation routine.
+  let checkValidated = await sc.getLevel(TMP2 + address);
+  let test = false;
+  if (checkValidated != -1) {
+    test = true;
+  }
+
+  if (checkStar && test) {
+    // make the new star obj in here.
+    let newStar = await star.createStar(req.body.star);
+    //console.log("address is: " + req.body.address);
+    //console.log("newStar is: " + newStar.toString());
+    let newBlock = await new sc.Block(req.body.address, newStar);
+    //console.log("newBlock is: " + newBlock.toString());
+
+    let tempBlockchain = await new sc.bc();
+    tempBlockchain.height = await sc.getHeight();
+    
+    let ret = await tempBlockchain.addBlock(newBlock);
+    //console.log('ret is: ' + ret);
+    console.log('about to getLevel(' + tempBlockchain.height + ')');
+    var getJustAddedBlock = await sc.getLevel(tempBlockchain.height);
+    //console.log("getJustAddedBlock is: " + getJustAddedBlock);
+    res.send(getJustAddedBlock);
+     
+    // need to delete TMP2 entry
+    sc.deleteEntry(TMP2 + address);
+  }
+  else {
+    res.send("FAILED. Either check or test did not work...");
+  }
 })
 
 app.post('/requestValidation', async function (req, res) {
@@ -166,6 +192,13 @@ app.post('/message-signature/validate', async function (req, res) {
       // not the most elegant method of JSONifying something...
       ret = "{\"registerStar\": true,\"status\": {\"address\": \"" + lCheck.address + "\",\"requestTimeStamp\": \"" + lCheck.requestTimeStamp + "\",\"message\": \"" + lCheck.message + "\",\"validationWindow\": " + lCheck.validationWindow + ",\"messageSignature\": \"valid\"}}";
       console.log("ret is: " + ret);
+
+      // need to delete TMP entry and insert TMP2 entry
+      let lDel = await sc.deleteEntry(TMP + address);
+  
+      // add a new temporary entry to the leveldb
+      sc.addTempLevel(TMP2 + address, JSON.stringify(lCheck));
+
     }
     else {
       console.log("Didn't check out");

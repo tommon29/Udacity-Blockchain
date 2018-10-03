@@ -12,10 +12,10 @@ let db = level(chainDB);
 |  ===============================================*/
 
 class Block {
-  constructor(data) {
+  constructor(aAddr, aData) {
     this.hash = "",
       this.height = 0,
-      this.body = data,
+      this.body = {address: aAddr, star: aData},
       this.time = 0,
       this.previousBlockHash = ""
   }
@@ -25,6 +25,8 @@ class Block {
     str += "hash = " + this.hash + '\n';
     str += "height = " + this.height + '\n';
     str += "body = " + this.body + '\n';
+    str += "body.address = " + this.body.address + '\n';
+    str += "body.address.star = " + this.body.star + '\n';
     str += "time = " + this.time + '\n';
     str += "previousBlockHash = " + this.previousBlockHash + '\n';
 
@@ -244,6 +246,16 @@ async function checkEntry(key) {
   }
 }
 
+async function deleteEntry(key) {
+  db.del(key, function (err) {
+    if (err) {
+      // handle I/O or other error
+      console.log("There was an error removing key: " + key + " from the leveldb.");
+      console.log("The error was: " + err);
+    }
+  });
+}
+
 module.exports.getLevel = getLevelDBData;
 module.exports.Block = Block;
 module.exports.bc = Blockchain;
@@ -251,4 +263,4 @@ module.exports.getHeight = getBlockchainHeightAsync;
 module.exports.db = db;
 module.exports.addTempLevel = addLevelDBData;
 module.exports.checkEntry = checkEntry;
-
+module.exports.deleteEntry = deleteEntry;
