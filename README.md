@@ -2,7 +2,7 @@
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. This project was built using the express framework and has two endpoints which are described below. Use the quickstart section for an already "set up" workspace.
+These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. This project was built using the express framework and has endpoints which are described below. Use the quickstart section for an already "set up" workspace.
 
 ## Quickstart (just run these)
 
@@ -17,8 +17,33 @@ npm install bitcoinjs-message --save
 
 node index.js
 
-curl -X "POST" "http://localhost:8000/block" -H 'Content-Type: application/json' -d $'{"body":"adding a new block"}'
-curl -X "POST" "http://localhost:8000/block" -H 'Content-Type: application/json' -d $'{"body":"adding another new block"}'
+curl -X "POST" "http://localhost:8000/requestValidation" \
+     -H 'Content-Type: application/json; charset=utf-8' \
+     -d $'{
+  "address": "<Your wallet address goes here>"
+}'
+```
+Then you will need to sign the message that the previous command returned. ONLY sign the "message" part of the return JSON.
+```
+curl -X "POST" "http://localhost:8000/message-signature/validate" \
+     -H 'Content-Type: application/json; charset=utf-8' \
+     -d $'{
+  "address": "<Your wallet address goes here>",
+  "signature": "<The signature from signing the previous message goes here>"
+}'
+```
+Now you can register a star. Use the following command:
+```
+curl -X "POST" "http://localhost:8000/block" \
+     -H 'Content-Type: application/json; charset=utf-8' \
+     -d $'{
+  "address": "<Your wallet address goes here>",
+  "star": {
+    "dec": "-04° 03'\'' 29",
+    "ra": "12h 37m 40s",
+    "story": "This is an example star story."
+  }
+}'
 ```
 
 ## More Details
