@@ -159,7 +159,7 @@ app.post('/block', async function (req, res) {
     
     let ret = await tempBlockchain.addBlock(tempBlockchain.height, newBlock);
     //console.log('ret is: ' + ret);
-    ht--;
+    //ht--;
     console.log('about to getLevel(' + ht + ')');
     var getJustAddedBlock = await sc.getLevel(ht);
     //console.log("getJustAddedBlock is: " + getJustAddedBlock);
