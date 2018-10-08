@@ -27,13 +27,13 @@ class Block {
 
   toString() {
     var str = "\n";
-    str += "hash = " + this.hash + '\n';
-    str += "height = " + this.height + '\n';
-    str += "body = " + this.body + '\n';
-    str += "body.address = " + this.body.address + '\n';
-    str += "body.address.star = " + this.body.star + '\n';
-    str += "time = " + this.time + '\n';
-    str += "previousBlockHash = " + this.previousBlockHash + '\n';
+    if (this.hash) { str += "hash = " + this.hash + '\n';}
+    if (this.height) { str += "height = " + this.height + '\n';}
+    if (this.body) { str += "body = " + this.body + '\n';}
+    if (this.body.address) { str += "body.address = " + this.body.address + '\n';}
+    if (this.body.star) { str += "body.star = " + this.body.star + '\n';}
+    if (this.time) { str += "time = " + this.time + '\n';}
+    if (this.previousBlockHash) { str += "previousBlockHash = " + this.previousBlockHash + '\n';}
 
     return str;
   }
@@ -63,28 +63,48 @@ class Blockchain {
       let newBlock = await new Block("1234567890123456789012345678901234", newStar);
       console.log("newBlock is: " + newBlock.toString());
 
+      // as per a reviewers comments I am adding the genesis block without the star properties.
+      delete newBlock.body.star;
+      console.log("newBlock is (after trying to delete body): " + newBlock.toString());
+
       let ret = await this.addBlock(0, newBlock);
+      console.log("ret in initialize() is: " + ret);
     }
   }
 
   // Add new block
   async addBlock(height, newBlock) {
-    // Block height
-    newBlock.height = height;
-    // UTC timestamp
-    newBlock.time = new Date().getTime().toString().slice(0, -3);
-    // previous block hash
-    if (this.height > 0) {
-      let prevBlock = await this.getBlock(this.height - 1);
-      let prevHash = prevBlock.hash;
-      newBlock.previousBlockHash = prevHash;
-    }
-    // Block hash with SHA256 using newBlock and converting to a string
-    newBlock.hash = SHA256(JSON.stringify(newBlock)).toString();
-    // Adding block object to chain
-    let add = await addLevelDBData(height, JSON.stringify(newBlock));
-    //let ht = await getBlockchainHeightAsync();
-    this.height++;
+    console.log("Trying to addBlock at height: " + height);
+    return new Promise(async (resolve, reject) => {
+      // Block height
+      newBlock.height = height;
+      // UTC timestamp
+      newBlock.time = new Date().getTime().toString().slice(0, -3);
+      // previous block hash
+      console.log("In addBlock, this.height is: " + this.height);
+      if (this.height >= 0) {
+        let ht = 0;
+        if (this.height == 0) {
+          ht = this.height;
+        }
+        else {
+          ht = this.height -1;
+        }
+        console.log("ht is: " + ht)
+        //let prevBlock = await this.getBlock(this.height - 1);
+        let prevBlock = await this.getBlock(ht);
+        let prevHash = prevBlock.hash;
+        newBlock.previousBlockHash = prevHash;
+      }
+      // Block hash with SHA256 using newBlock and converting to a string
+      newBlock.hash = SHA256(JSON.stringify(newBlock)).toString();
+      // Adding block object to chain
+      let add = await addLevelDBData(height, JSON.stringify(newBlock));
+      //let ht = await getBlockchainHeightAsync();
+      console.log("add is: " + add);
+      this.height++;
+      resolve(add);
+    });
   }
 
   // Get block height
@@ -189,9 +209,12 @@ class Blockchain {
 
 // Add data to levelDB with key/value pair
 function addLevelDBData(key, value) {
-  db.put(key, value, function (err) {
-    if (err) return console.log('Block ' + key + ' submission failed', err);
-  })
+  return new Promise(resolve => {
+    db.put(key, value, function (err) {
+      if (err) return console.log('Block ' + key + ' submission failed', err);
+      resolve(value);
+    })
+  });
 }
 
 // Get data from levelDB with key
@@ -250,6 +273,7 @@ async function checkEntry(key) {
   lEntry = JSON.parse(lEntry);
 
   let lTimeRemaining = lEntry.validationWindow - (lTimeStamp - lEntry.requestTimeStamp);
+  console.log("key: " + key + ", timeRemaining : " + lTimeRemaining);
 
   if (lTimeRemaining < 0) {
     console.log("Need to delete this key: " + key);

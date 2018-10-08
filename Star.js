@@ -1,11 +1,10 @@
 class Star {
-    constructor(aRa, aDec, aMag, aConst, aStory, aStoryDec) {
+    constructor(aRa, aDec, aMag, aConst, aStory) {
         this.ra = aRa,
             this.dec = aDec,
             this.magnitude = aMag, // optional
             this.constellation = aConst, // optional
-            this.story = aStory,
-            this.storyDecoded = aStoryDec
+            this.story = aStory
     }
     
     toString() {
@@ -15,7 +14,6 @@ class Star {
         if (this.magnitude) { str += "magnitude = " + this.magnitude + '\n';}
         if (this.constellation) { str += "constellation = " + this.constellation + '\n';}
         if (this.story) { str += "story = " + this.story + '\n';}
-        if (this.storyEncoded) { str += "storyEncoded = " + this.storyEncoded + '\n';}
 
         return str;
     }
@@ -29,6 +27,8 @@ class Star {
 }
 
 async function createGenesisStar() {
+    
+    console.log("ENTERING createGenesisStar");
     // required star parameters
     let ra = "12h 37m 40s";
     let dec = "-04° 03''' 29";
@@ -39,7 +39,7 @@ async function createGenesisStar() {
     let mag = "1AU";
     let constellation = "Earth maybe";
 
-    let lStar = new Star(ra, dec, mag, constellation, storyEncoded, story);
+    let lStar = new Star(ra, dec, mag, constellation, storyEncoded);
 
     if (!lStar.magnitude) {
         delete lStar.magnitude;
@@ -66,7 +66,7 @@ async function createStar(aStarData) {
     let mag = aStarData.magnitude;
     let constellation = aStarData.constellation;
 
-    let lStar = new Star(ra, dec, mag, constellation, storyEncoded, story);
+    let lStar = new Star(ra, dec, mag, constellation, storyEncoded);
 
     if (!lStar.magnitude) {
         delete lStar.magnitude;
@@ -93,11 +93,13 @@ async function checkStarData(aStarData) {
     let mag = aStarData.magnitude;
     let constellation = aStarData.constellation;
 
-    if (!ra) {
+    if (!ra || ra === "") {
+        console.log("ra field cannot be empty");
         return false;
     }
 
-    if (!dec) {
+    if (!dec || dec === "") {
+        console.log("dec field cannot be empty");
         return false;
     }
 

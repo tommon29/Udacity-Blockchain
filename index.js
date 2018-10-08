@@ -45,6 +45,13 @@ app.get('/block/:blockID', async function (req, res) {
     //console.log('ret is : ' + ret);
     ret = JSON.parse(ret);
     //console.log('ret.body is : ' + ret.body);
+
+    if (req.params.blockID > 0) {
+      let story = ret.body.star.story;
+      let storyDecoded = new Buffer(story, 'hex').toString();
+      ret.body.star.storyDecoded = storyDecoded;
+    }
+
     res.send(ret)
   } catch(e) {
     res.send('ERROR e is: ' + e)
@@ -83,7 +90,7 @@ app.get('/stars/hash::hash', async function (req, res) {
     var lHash = lBlock.hash;
 
     if (lHash == req.params.hash) {
-      res.send(data.value)
+      res.send(JSON.parse(data.value))
     }
   });
 })
@@ -155,15 +162,19 @@ app.post('/block', async function (req, res) {
 
     let tempBlockchain = await new sc.bc();
     let ht = await sc.getHeight();
-    tempBlockchain.height = ht
+    tempBlockchain.height = ht;
+    console.log("ht is : " + ht)
     
-    let ret = await tempBlockchain.addBlock(tempBlockchain.height, newBlock);
-    //console.log('ret is: ' + ret);
+    if (tempBlockchain.height == 0) {
+      ht++;
+    }
+    let ret = await tempBlockchain.addBlock(ht, newBlock);
+    console.log('ret is: ' + ret);
     //ht--;
     console.log('about to getLevel(' + ht + ')');
     var getJustAddedBlock = await sc.getLevel(ht);
     //console.log("getJustAddedBlock is: " + getJustAddedBlock);
-    res.send(getJustAddedBlock);
+    res.send(JSON.parse(getJustAddedBlock));
      
     // need to delete TMP2 entry
     sc.deleteEntry(TMP2 + address);
@@ -178,6 +189,10 @@ app.post('/requestValidation', async function (req, res) {
   let lTimeStamp = new Date().getTime().toString().slice(0, -3);
   let lMessage = lAddress + ':' + lTimeStamp + ':starRegistry'
   let lValWindow = DEFAULT_VALIDATION_WINDOW;
+
+  if (!lAddress) {
+    res.send("FAILED. Address is empty");
+  }
 
   // create a response with the default values
   let lResponse = new resp.Response(lAddress, lTimeStamp, lMessage, lValWindow);
@@ -204,7 +219,7 @@ app.post('/requestValidation', async function (req, res) {
   // add a temporary entry to the leveldb
   sc.addTempLevel(TMP + lAddress, ret);
 
-  res.send(ret);
+  res.send(JSON.parse(ret));
 })
 
 app.post('/message-signature/validate', async function (req, res) {
@@ -212,6 +227,10 @@ app.post('/message-signature/validate', async function (req, res) {
   const address = req.body.address
   const signature = req.body.signature
   let ret = "FAILED";
+
+  if (!address || !signature) {
+    res.send(JSON.parse(ret));
+  }
 
   let lCheck = await sc.getLevel(TMP + address);
   if (lCheck != -1) {
@@ -223,12 +242,25 @@ app.post('/message-signature/validate', async function (req, res) {
     console.log("lCheck.validationWindow is : " + lCheck.validationWindow);
 
     let message = lCheck.message;
+
+    // TODO need to check Validation Window
+    let test = true;
+    let lTimeStamp = new Date().getTime().toString().slice(0, -3);
+
+    let lTimeRemaining = lCheck.validationWindow - (lTimeStamp - lCheck.requestTimeStamp);
+
+    // check if there is still time remaining
+    if (lTimeRemaining < 0) {
+      test = false;
+      res.send(ret);
+    }   
+
     
-    if (bitcoinMessage.verify(message, address, signature)) {
+    if (bitcoinMessage.verify(message, address, signature) && test) {
       console.log("Checks out");
 
       // not the most elegant method of JSONifying something...
-      ret = "{\"registerStar\": true,\"status\": {\"address\": \"" + lCheck.address + "\",\"requestTimeStamp\": \"" + lCheck.requestTimeStamp + "\",\"message\": \"" + lCheck.message + "\",\"validationWindow\": " + lCheck.validationWindow + ",\"messageSignature\": \"valid\"}}";
+      ret = "{\"registerStar\": true,\"status\": {\"address\": \"" + lCheck.address + "\",\"requestTimeStamp\": \"" + lCheck.requestTimeStamp + "\",\"message\": \"" + lCheck.message + "\",\"validationWindow\": " + lTimeRemaining + ",\"messageSignature\": \"valid\"}}";
       console.log("ret is: " + ret);
 
       // need to delete TMP entry and insert TMP2 entry
@@ -244,7 +276,7 @@ app.post('/message-signature/validate', async function (req, res) {
     }
   }
 
-  res.send(ret);
+  res.send(JSON.parse(ret));
 })
 
 app.listen(8000, () => console.log('Example app listening on port 8000!'));
