@@ -54,7 +54,7 @@ app.get('/block/:blockID', async function (req, res) {
 
     res.send(ret)
   } catch(e) {
-    res.send('ERROR e is: ' + e)
+    res.json({ error: e });
   }
 
 })
@@ -62,7 +62,7 @@ app.get('/block/:blockID', async function (req, res) {
 app.get('/stars/address::addr', async function (req, res) {
 
   let stream = sc.db.createReadStream();
-  let ret = "[";
+  let ret = [];
 
   stream.on('data', function (data) {
     let lBlock = JSON.parse(data.value);
@@ -70,13 +70,11 @@ app.get('/stars/address::addr', async function (req, res) {
     let lAddress = lBody.address;
 
     if (lAddress == req.params.addr) {
-      ret += data.value + ',';
+      ret.push(data.value)
     }
 
   }).on('close', function () {
-    ret = ret.substring(0, ret.length - 1);
-    ret += ']';
-    res.send(JSON.parse(ret));
+    res.json(ret)
   });
 
 })
@@ -92,6 +90,8 @@ app.get('/stars/hash::hash', async function (req, res) {
     if (lHash == req.params.hash) {
       res.send(JSON.parse(data.value))
     }
+  }).on('close', function () {
+    res.json({ error: 'FAILED. No hash with value: ' + req.params.hash });
   });
 })
 
@@ -111,13 +111,13 @@ app.get('/printDB', async function (req, res) {
     });
 
   } catch (e) {
-    res.send('ERROR e is: ' + e + '\n')
+    res.json({ error: e });
   }
 })
 
 app.get('/cleanOldRequests', async function (req, res) {
   try {
-    let stream = sc.db.createReadStream({gte:TMP});
+    let stream = sc.db.createReadStream({gte:TMP2});
     let ret = "DONE";
     let keysToCheck = [];
     stream.on('data', function (data) {
@@ -132,7 +132,7 @@ app.get('/cleanOldRequests', async function (req, res) {
     });
 
   } catch (e) {
-    res.send('ERROR e is: ' + e + '\n')
+    res.json({ error: e });
   }
 })
 
@@ -142,6 +142,7 @@ app.post('/', function (req, res) {
 
 app.post('/block', async function (req, res) {
  
+  // checkStarData will check to see if the supplied star data meets requirements
   let checkStar = star.checkStarData(req.body.star);
   let address = req.body.address;
 
@@ -152,6 +153,7 @@ app.post('/block', async function (req, res) {
     test = true;
   }
 
+  // checkStar uses the checkStarData method to ensure that the star data has the required fields.
   if (checkStar && test) {
     // make the new star obj in here.
     let newStar = await star.createStar(req.body.star);
@@ -180,7 +182,7 @@ app.post('/block', async function (req, res) {
     sc.deleteEntry(TMP2 + address);
   }
   else {
-    res.send("FAILED. Either check or test did not work...");
+    res.json({ error: 'FAILED. Either check or test did not work...' });
   }
 })
 
@@ -191,7 +193,7 @@ app.post('/requestValidation', async function (req, res) {
   let lValWindow = DEFAULT_VALIDATION_WINDOW;
 
   if (!lAddress) {
-    res.send("FAILED. Address is empty");
+    res.json({ error: 'FAILED. Address is empty' });
   }
 
   // create a response with the default values
@@ -226,7 +228,7 @@ app.post('/message-signature/validate', async function (req, res) {
   // Verify a Bitcoin message
   const address = req.body.address
   const signature = req.body.signature
-  let ret = "FAILED";
+  let ret = { error: 'FAILED. No entry in the leveldb to verify. Try using /requestValidation first' };
 
   if (!address || !signature) {
     res.send(JSON.parse(ret));
@@ -254,29 +256,32 @@ app.post('/message-signature/validate', async function (req, res) {
       test = false;
       res.send(ret);
     }   
-
     
-    if (bitcoinMessage.verify(message, address, signature) && test) {
-      console.log("Checks out");
+    try {
+      if (bitcoinMessage.verify(message, address, signature) && test) {
+        console.log("Checks out");
 
-      // not the most elegant method of JSONifying something...
-      ret = "{\"registerStar\": true,\"status\": {\"address\": \"" + lCheck.address + "\",\"requestTimeStamp\": \"" + lCheck.requestTimeStamp + "\",\"message\": \"" + lCheck.message + "\",\"validationWindow\": " + lTimeRemaining + ",\"messageSignature\": \"valid\"}}";
-      console.log("ret is: " + ret);
+        // not the most elegant method of JSONifying something...
+        ret = "{\"registerStar\": true,\"status\": {\"address\": \"" + lCheck.address + "\",\"requestTimeStamp\": \"" + lCheck.requestTimeStamp + "\",\"message\": \"" + lCheck.message + "\",\"validationWindow\": " + lTimeRemaining + ",\"messageSignature\": \"valid\"}}";
+        console.log("ret is: " + ret);
 
-      // need to delete TMP entry and insert TMP2 entry
-      let lDel = await sc.deleteEntry(TMP + address);
-  
-      // add a new temporary entry to the leveldb
-      sc.addTempLevel(TMP2 + address, JSON.stringify(lCheck));
+        // need to delete TMP entry and insert TMP2 entry
+        let lDel = await sc.deleteEntry(TMP + address);
 
-    }
-    else {
-      console.log("Didn't check out");
-      ret = "FAILED"; // for good measure ;)
+        // add a new temporary entry to the leveldb
+        sc.addTempLevel(TMP2 + address, JSON.stringify(lCheck));
+
+      }
+      else {
+        console.log("Didn't check out");
+        ret = { error: 'FAILED. Message signature was not valid or validation window has closed.' }; // for good measure ;)
+      }
+    } catch (e) {
+      res.json({ error: e });
     }
   }
 
-  res.send(JSON.parse(ret));
+  res.json(ret);
 })
 
 app.listen(8000, () => console.log('Example app listening on port 8000!'));
