@@ -7,7 +7,7 @@ class Response {
     }
 
     toString() {
-        var str = "\n";
+        let str = "\n";
         str += "address = " + this.address + '\n';
         str += "requestTimeStamp = " + this.requestTimeStamp + '\n';
         str += "message = " + this.message + '\n';

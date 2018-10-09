@@ -5,16 +5,16 @@ const app = express()
 const bitcoin = require('bitcoinjs-lib')
 const bitcoinMessage = require('bitcoinjs-message')
 
-var sc = require('./simpleChain.js')
-var resp = require('./Response.js')
-var star = require('./Star.js')
+const sc = require('./simpleChain.js')
+const resp = require('./Response.js')
+const star = require('./Star.js')
 
-let DEFAULT_VALIDATION_WINDOW = 300;
-let TMP = "temp_"; // prefix for temporary keys in the leveldb
-let TMP2 = "temp2_"; // prefix for temporary keys in the leveldb that have had their address validated
+const DEFAULT_VALIDATION_WINDOW = 300;
+const TMP = "temp_"; // prefix for temporary keys in the leveldb
+const TMP2 = "temp2_"; // prefix for temporary keys in the leveldb that have had their address validated
 
 // taken from StackOverflow answer (https://stackoverflow.com/questions/5710358/how-to-retrieve-post-query-parameters)
-var bodyParser = require('body-parser')
+let bodyParser = require('body-parser')
 app.use( bodyParser.json() );       // to support JSON-encoded bodies
 app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
   extended: true
@@ -36,7 +36,7 @@ app.get('/block/:blockID', async function (req, res) {
   //res.send('Got a GET request at block, and blockID is ' + req.params.blockID)
   try{
     console.log('trying to access the chain ...');
-    var ret = await sc.getLevel(req.params.blockID);
+    let ret = await sc.getLevel(req.params.blockID);
     if (ret == -1) 
     {
       res.send('ERROR: no block with ID: ' + req.params.blockID)
@@ -61,13 +61,13 @@ app.get('/block/:blockID', async function (req, res) {
 
 app.get('/stars/address::addr', async function (req, res) {
 
-  var stream = sc.db.createReadStream();
-  var ret = "[";
+  let stream = sc.db.createReadStream();
+  let ret = "[";
 
   stream.on('data', function (data) {
-    var lBlock = JSON.parse(data.value);
-    var lBody = lBlock.body;
-    var lAddress = lBody.address;
+    let lBlock = JSON.parse(data.value);
+    let lBody = lBlock.body;
+    let lAddress = lBody.address;
 
     if (lAddress == req.params.addr) {
       ret += data.value + ',';
@@ -76,18 +76,18 @@ app.get('/stars/address::addr', async function (req, res) {
   }).on('close', function () {
     ret = ret.substring(0, ret.length - 1);
     ret += ']';
-    res.send(ret);
+    res.send(JSON.parse(ret));
   });
 
 })
 
 app.get('/stars/hash::hash', async function (req, res) {
 
-  var stream = sc.db.createReadStream();
+  let stream = sc.db.createReadStream();
 
   stream.on('data', function (data) {
-    var lBlock = JSON.parse(data.value);
-    var lHash = lBlock.hash;
+    let lBlock = JSON.parse(data.value);
+    let lHash = lBlock.hash;
 
     if (lHash == req.params.hash) {
       res.send(JSON.parse(data.value))
@@ -99,8 +99,8 @@ app.get('/printDB', async function (req, res) {
   try {
     //console.log('\nPrinting all of the data in the levelDB ...\n');
     
-    var stream = sc.db.createReadStream();
-    var ret = "START <p>";
+    let stream = sc.db.createReadStream();
+    let ret = "START <p>";
     stream.on('data', function (data) {
       //console.log('key = ' + data.key + " , value = " + data.value);
       ret += 'key = ' + data.key + " , value = " + data.value + '<p>';
@@ -117,14 +117,14 @@ app.get('/printDB', async function (req, res) {
 
 app.get('/cleanOldRequests', async function (req, res) {
   try {
-    var stream = sc.db.createReadStream({gte:TMP});
+    let stream = sc.db.createReadStream({gte:TMP});
     let ret = "DONE";
-    var keysToCheck = [];
+    let keysToCheck = [];
     stream.on('data', function (data) {
       keysToCheck.push(data.key);
     }).on('close', function () {
       
-      for (var i in keysToCheck) {
+      for (let i in keysToCheck) {
         let lResponse = sc.checkEntry(keysToCheck[i]);
       }
 
@@ -172,7 +172,7 @@ app.post('/block', async function (req, res) {
     console.log('ret is: ' + ret);
     //ht--;
     console.log('about to getLevel(' + ht + ')');
-    var getJustAddedBlock = await sc.getLevel(ht);
+    let getJustAddedBlock = await sc.getLevel(ht);
     //console.log("getJustAddedBlock is: " + getJustAddedBlock);
     res.send(JSON.parse(getJustAddedBlock));
      

@@ -8,7 +8,7 @@ class Star {
     }
     
     toString() {
-        var str = "\n";
+        let str = "\n";
         if (this.ra) { str += "ra = " + this.ra + '\n';}
         if (this.dec) { str += "dec = " + this.dec + '\n';}
         if (this.magnitude) { str += "magnitude = " + this.magnitude + '\n';}

@@ -26,7 +26,7 @@ class Block {
   }
 
   toString() {
-    var str = "\n";
+    let str = "\n";
     if (this.hash) { str += "hash = " + this.hash + '\n';}
     if (this.height) { str += "height = " + this.height + '\n';}
     if (this.body) { str += "body = " + this.body + '\n';}
@@ -172,7 +172,7 @@ class Blockchain {
     let errorLog = [];
     let size = await this.getBlockHeight() - 1;
     console.log("size is " + size);
-    for (var i = 0; i < size; i++) {
+    for (let i = 0; i < size; i++) {
       // validate block
       let validCheck = await this.validateBlock(i);
       if (!validCheck) errorLog.push(i);
@@ -252,9 +252,9 @@ function getBlockchainHeightAsync() {
   return new Promise(resolve => {
     let i = 0;
     db.createReadStream().on('data', function (data) {
-      var str = data.key;
-      var temp1 = str.includes(TMP);
-      var temp2 = str.includes(TMP2);
+      let str = data.key;
+      let temp1 = str.includes(TMP);
+      let temp2 = str.includes(TMP2);
       if (!temp1 && !temp2) {
         i++; // only want to count keys that are "non-temp" keys
       }
