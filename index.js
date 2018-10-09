@@ -39,7 +39,8 @@ app.get('/block/:blockID', async function (req, res) {
     let ret = await sc.getLevel(req.params.blockID);
     if (ret == -1) 
     {
-      res.send('ERROR: no block with ID: ' + req.params.blockID)
+      //res.send('ERROR: no block with ID: ' + req.params.blockID)
+      res.json({ error: 'no block with ID: ' + req.params.blockID });
       return;
     }
     //console.log('ret is : ' + ret);
@@ -254,7 +255,7 @@ app.post('/message-signature/validate', async function (req, res) {
     // check if there is still time remaining
     if (lTimeRemaining < 0) {
       test = false;
-      res.send(ret);
+      res.send(JSON.parse(ret));
     }   
     
     try {
